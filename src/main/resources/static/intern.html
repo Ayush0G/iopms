@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IOPMS — Intern</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Valen Labs — IOPMS</h1>
+  <div><span class="user" id="who"></span> <button class="ghost small" onclick="logout()">Log out</button></div>
+</header>
+<nav>
+  <button data-tab="profile">Profile</button>
+  <button data-tab="attendance">Attendance</button>
+  <button data-tab="tasks">Tasks</button>
+  <button data-tab="reports">Daily Report</button>
+  <button data-tab="projects">Projects</button>
+</nav>
+<main>
+  <section id="tab-profile"></section>
+  <section id="tab-attendance"></section>
+  <section id="tab-tasks"></section>
+  <section id="tab-reports"></section>
+  <section id="tab-projects"></section>
+</main>
+<script src="/api.js"></script>
+<script src="/intern.js"></script>
+</body>
+</html>

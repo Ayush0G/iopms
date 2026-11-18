@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IOPMS — Admin</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <h1>Valen Labs — IOPMS Admin</h1>
+  <div><span class="user" id="who"></span> <button class="ghost small" onclick="logout()">Log out</button></div>
+</header>
+<nav>
+  <button data-tab="dashboard">Dashboard</button>
+  <button data-tab="interns">Interns</button>
+  <button data-tab="attendance">Attendance</button>
+  <button data-tab="tasks">Tasks</button>
+  <button data-tab="reports">Daily Reports</button>
+  <button data-tab="projects">Projects</button>
+  <button data-tab="intern-report">Intern Report</button>
+</nav>
+<main>
+  <section id="tab-dashboard"></section>
+  <section id="tab-interns"></section>
+  <section id="tab-attendance"></section>
+  <section id="tab-tasks"></section>
+  <section id="tab-reports"></section>
+  <section id="tab-projects"></section>
+  <section id="tab-intern-report"></section>
+</main>
+<script src="/api.js"></script>
+<script src="/admin.js"></script>
+</body>
+</html>
