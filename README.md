@@ -1,52 +1,69 @@
 # IOPMS — Intern Operations & Performance Management System
 
-Internal web platform for Valen Labs to manage interns: attendance, working hours, task
-allocation, daily reports, project submissions and admin reporting.
+Internal web platform for **Valen Labs** to manage interns: attendance & working hours,
+task allocation, daily reports, project submissions, an admin dashboard and a
+consolidated per-intern report with CSV export.
 
-## Stack
+**Stack:** Java 21 · Spring Boot 3.4 · Spring Data JPA · Spring Security (JWT) ·
+PostgreSQL (Supabase) · plain HTML/CSS/JS · Maven · Swagger · Postman
 
-| Layer      | Technology                                          |
-|------------|-----------------------------------------------------|
-| Backend    | Java 21, Spring Boot 3.4, Spring Data JPA, Spring Security (JWT), REST |
-| Database   | Supabase (PostgreSQL); H2 for local dev/tests       |
-| Frontend   | Plain HTML/CSS/JS, served by the backend             |
-| API docs   | Swagger UI at `/swagger-ui.html`                     |
-| Tools      | Maven, Git, Postman (`postman/IOPMS.postman_collection.json`) |
+![Admin dashboard](docs/screenshots/01-admin-dashboard.jpeg)
 
-## Quick start (no database needed)
+## Features (7 modules)
+
+| Module | Highlights |
+|--------|-----------|
+| **A. Auth & users** | BCrypt hashing, JWT + roles, intern CRUD/deactivate, profile self-edit. Passwords never leave the backend (only hashes stored). |
+| **B. Attendance** | Start/End work, **server clock only**, one open session at a time, no end-without-start, backend-computed minutes, monthly totals, admin corrections with mandatory reason + audit history. Interns have no endpoint that writes timestamps. |
+| **C. Tasks** | Admin creates/assigns with priority, dates, status, remarks. Interns update progress; only admins may set COMPLETED / CHANGES_REQUESTED. |
+| **D. Daily reports** | One report per intern per date (DB unique index), approve / request-changes with remarks, missing-report listing. |
+| **E. Projects** | Multi-intern assignment, supervisor, dates; deliverable submissions (repo URL + notes) with **automatic version numbers** and review feedback. |
+| **F. Admin dashboard** | Team, attendance, task, reporting and project counters — computed server-side. |
+| **G. Intern report** | One consolidated payload per intern (profile, attendance, tasks, reports, submissions, feedback) with month filter + **CSV export**. |
+
+## Quick start
+
+### Option 1 — local, zero setup (H2)
 
 ```powershell
 # Windows PowerShell: keep the -D flag quoted, or PowerShell splits it on the dots
-mvn spring-boot:run "-Dspring-boot.run.profiles=dev"   # uses an embedded H2 file DB
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=dev     # macOS / Linux
 ```
 
-Open http://localhost:8080 — log in with the seeded admin:
-
-```
-admin@valenlabs.com / Admin@123
-```
-
-Create an intern from the **Interns** tab, log out, log in as that intern.
-
-## Supabase setup (production)
-
-The Supabase **direct connection is IPv6-only**, which most local networks can't reach.
-Use the **transaction pooler** instead (IPv4, port 6543, username `postgres.<project-ref>`).
-
-1. Create a Supabase project (note its region, e.g. `ap-northeast-1`) and copy the
-   **Transaction pooler** connection string from Dashboard → Connect.
-2. Set environment variables and start (or just use the helper script):
+### Option 2 — Supabase (PostgreSQL)
 
 ```powershell
 .\run-supabase.ps1     # prompts for the DB password, generates a JWT secret
 ```
 
+The Supabase **direct connection is IPv6-only** (unreachable from most local networks) —
+the script uses the **transaction pooler** instead (IPv4, port 6543,
+username `postgres.<project-ref>`). Manual equivalent and full notes:
+[Supabase setup](#supabase-setup).
+
+### Log in → http://localhost:8080
+
+Both panels share one login page; the app routes you by role:
+
+| Panel | Email | Password | Lands on |
+|-------|-------|----------|----------|
+| Admin | `admin@valenlabs.com` | `Admin@123` | Dashboard · Interns · Attendance · Tasks · Reports · Projects · Intern Report |
+| Intern | `ayush@valenlabs.com` | `Intern@123` | Profile · Attendance · Tasks · Daily Report · Projects |
+
+> Demo intern is created by an admin from the **Interns** tab on a fresh database.
+> Log out (top right) to switch panels.
+
+### Supabase setup
+
+1. Create a Supabase project (note its region, e.g. `ap-northeast-1`).
+2. Copy the **Transaction pooler** connection string from Dashboard → Connect.
+
 ```bash
-# macOS / Linux equivalent
+# macOS / Linux (Windows: use run-supabase.ps1)
 export DB_URL="jdbc:postgresql://aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0"
 export DB_USER=postgres.<project-ref>
 export DB_PASSWORD=<database-password>
@@ -54,95 +71,59 @@ export JWT_SECRET=<random-string-at-least-32-bytes>
 mvn spring-boot:run     # no dev profile — that would switch back to H2
 ```
 
-JPA (`ddl-auto=update`) creates the tables on first start and `SeedData` creates
-`admin@valenlabs.com / Admin@123`. The full schema is documented in
-[`schema-postgres.sql`](schema-postgres.sql) (note: Supabase is PostgreSQL; the schema is the
-authoritative deliverable — MySQL is not used).
+First boot creates all tables (`ddl-auto=update`) and seeds the admin.
+Schema reference: [`schema-postgres.sql`](schema-postgres.sql).
 
-## Modules
-
-| Module | Where | Highlights |
-|--------|-------|-----------|
-| A. Auth & users | `auth/`, `user/` | BCrypt hashing, JWT + role authorities, intern CRUD/deactivate, profile self-edit. Passwords never leave the backend (only hashes are stored). |
-| B. Attendance | `attendance/` | Start/End buttons, server clock only, one open session at a time, backend-computed minutes, monthly totals, incomplete-session detection, admin corrections with mandatory reason + `attendance_audit` history. Interns have **no** endpoint that writes timestamps. |
-| C. Tasks | `task/` | Admin creates/assigns with priority, dates, status, progress, remarks. Interns update progress; only admins may set COMPLETED/CHANGES_REQUESTED. |
-| D. Daily reports | `report/` | One report per intern per date (DB unique index), submit timestamp, approve / request-changes with remarks, missing-report listing. |
-| E. Projects | `project/` | Multi-intern assignment, supervisor, dates, status; deliverable submissions (repo URL + notes) with automatic version numbers and review feedback. |
-| F. Dashboard | `admin/` | Team, attendance, task, reporting and project counters computed server-side. |
-| G. Intern report | `admin/InternReportService` | One consolidated payload per intern (profile, attendance, tasks, reports, submissions, feedback) with month filter and CSV export. |
-
-## Architecture
-
-```
-Browser (static HTML/JS, served from src/main/resources/static)
-   │  fetch + Bearer JWT (localStorage)
-   ▼
-SecurityConfig ── JwtAuthFilter (validates token, sets ROLE_ADMIN / ROLE_INTERN)
-   ▼
-Controllers: AuthController · ProfileController · AdminController · InternController   (routing + @Valid)
-   ▼
-Services: InternService · AttendanceService · TaskService · ReportService ·
-          ProjectService · DashboardService · InternReportService                     (business rules, @Transactional)
-   ▼
-Repositories (Spring Data JPA, derived/JPQL queries)  ──►  Supabase (PostgreSQL) / H2
-   ▼
-GlobalExceptionHandler (validation → 400, business rules → 400/403/409, rest → 500)
-```
-
-Conventions: package-per-feature, records for DTOs, enum-per-field in the DB
-(`VARCHAR`), server-authoritative timestamps and hours, intern-scoped endpoints always
-derive the user id from the JWT — never from a request parameter.
-
-## Security
-
-- Login/logout separated from check-in/check-out (attendance is its own concept).
-- BCrypt password hashes; JWT signed with HS256 (`JWT_SECRET`, ≥ 32 bytes, fails fast if short).
-- Role checks at two layers: URL matchers (`/api/admin/**` → ADMIN, `/api/intern/**` → INTERN) plus service-level ownership checks.
-- Deactivated accounts are rejected even with a valid token.
-- Input validation (`@Valid` + jakarta constraints) on every request body.
-
-## Tests
+## Testing
 
 ```bash
-mvn test
+mvn test     # 14/14 green
 ```
 
 | Suite | Covers |
 |-------|--------|
 | `AttendanceServiceTest` (Mockito) | one-open-session rule, end-without-start, server-side hour computation, correction recompute + audit row, invalid correction rejected |
-| `AppFlowTest` (full HTTP + H2) | admin login → create intern → role isolation (403/401) → start/end rules → audited correction (480 min) → task progress rules → one-report-per-day (409) → report review → versioned project submissions → dashboard numbers → consolidated report + CSV |
+| `AppFlowTest` (HTTP e2e + H2) | admin login → create intern → role isolation (403/401) → start/end rules → audited correction (480 min) → task progress rules → one-report-per-day (409) → report review → versioned submissions → dashboard numbers → consolidated report + CSV |
 
-## API
+## API documentation
 
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- Postman collection: `postman/IOPMS.postman_collection.json` (collection variable `token` is
-  filled automatically by the login requests).
+- **Swagger UI:** http://localhost:8080/swagger-ui.html
+- **Postman:** [`postman/IOPMS.postman_collection.json`](postman/IOPMS.postman_collection.json)
+  (the collection `token` variable is filled automatically by the login requests)
+
+## Documentation
+
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — layers, data model, design decisions, security, environments
+- [`schema-postgres.sql`](schema-postgres.sql) — full database schema
+- [`docs/screenshots/`](docs/screenshots/) — module screenshots
 
 ## Repository structure
 
 ```
-src/main/java/com/valenlabs/iopms/
-  auth/       JWT service, security filter, login
-  user/       User entity, profile + intern management, seeded admin
-  attendance/ sessions, audit, business rules
-  task/       task allocation and tracking
-  report/     daily work reports
-  project/    projects and versioned submissions
-  admin/      admin controller, dashboard, consolidated report + CSV
-  intern/     intern controller (self-scoped endpoints)
-  common/     errors, current user, shared enums, helpers
-src/main/resources/static/   index.html (login), admin.html, intern.html, style.css, *.js
+iopms/
+├── README.md                  ← you are here
+├── docs/
+│   ├── ARCHITECTURE.md        system architecture & design decisions
+│   └── screenshots/           working-module screenshots
+├── schema-postgres.sql        authoritative DB schema (PostgreSQL)
+├── postman/                   Postman collection
+├── run-supabase.ps1           one-command Supabase start
+└── src/
+    ├── main/java/com/valenlabs/iopms/
+    │   auth/ user/ attendance/ task/ report/ project/ admin/ intern/ common/
+    └── main/resources/static/ index.html (login), admin.html, intern.html, style.css, *.js
 ```
 
-## Deliverables checklist
+## Deliverables
 
-- [x] Working backend (all 7 modules) and frontend
-- [x] `schema-postgres.sql` — database schema
+- [x] Working backend (all 7 modules) + frontend
+- [x] Database schema (`schema-postgres.sql`)
+- [x] Supabase (PostgreSQL) integration
 - [x] README with setup instructions
 - [x] Postman API collection
 - [x] Swagger documentation (auto-generated)
-- [x] Test cases and passing test results (`mvn test`)
-- [x] System architecture (above)
-- [ ] Screenshots of working modules — capture from `localhost:8080`
-- [ ] Walkthrough video — record with Win+G (Xbox Game Bar) or OBS while clicking through
-      Admin Dashboard → Interns → Attendance → Tasks → Reports → Projects → Intern portal
+- [x] Test cases — `mvn test` → **14/14 passing**
+- [x] System architecture document ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
+- [x] Screenshots of working modules ([`docs/screenshots/`](docs/screenshots/))
+- [ ] Walkthrough video (record with Win+G / OBS:
+      Admin Dashboard → Interns → Attendance → Tasks → Reports → Projects → Intern portal)
