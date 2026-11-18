@@ -26,11 +26,14 @@ public class ProjectService {
     private final ProjectSubmissionRepository submissions;
     private final UserRepository users;
 
+    // interns is a lazy collection — mapping must happen inside a session
+    @Transactional(readOnly = true)
     public List<ProjectResponse> list() {
         return projects.findAll().stream().map(ProjectResponse::from).toList();
     }
 
     /** Only the projects this intern is assigned to. */
+    @Transactional(readOnly = true)
     public List<ProjectResponse> forIntern(Long internId) {
         return projects.findByInternsId(internId).stream().map(ProjectResponse::from).toList();
     }

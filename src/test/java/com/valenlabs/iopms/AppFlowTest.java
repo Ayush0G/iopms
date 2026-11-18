@@ -173,6 +173,17 @@ class AppFlowTest {
         assertEquals(200, project.getStatusCode().value(), project.getBody() + "");
         projectId = ((Number) project.getBody().get("id")).longValue();
 
+        // listing must serialize the lazy interns collection inside a session
+        ResponseEntity<Map[]> adminList = http.exchange("/api/admin/projects",
+                HttpMethod.GET, new HttpEntity<>(auth(adminToken)), Map[].class);
+        assertEquals(200, adminList.getStatusCode().value());
+        assertTrue(java.util.Arrays.stream(adminList.getBody())
+                .anyMatch(p -> ((Number) p.get("id")).longValue() == projectId));
+        ResponseEntity<Map[]> internList = http.exchange("/api/intern/projects",
+                HttpMethod.GET, new HttpEntity<>(auth(internToken)), Map[].class);
+        assertEquals(200, internList.getStatusCode().value());
+        assertEquals(1, internList.getBody().length, "assigned intern sees exactly their project");
+
         ResponseEntity<Map> s1 = call("POST", "/api/intern/projects/" + projectId + "/submissions",
                 internToken, Map.of("repoUrl", "https://github.com/ayush/iopms", "notes", "first cut"));
         assertEquals(200, s1.getStatusCode().value(), s1.getBody() + "");
