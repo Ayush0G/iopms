@@ -1,7 +1,8 @@
-package com.valenlabs.iopms.user;
+package com.valenlabs.iopms.auth;
 
-import com.valenlabs.iopms.auth.JwtService;
 import com.valenlabs.iopms.common.ApiException;
+import com.valenlabs.iopms.user.User;
+import com.valenlabs.iopms.user.UserRepository;
 import com.valenlabs.iopms.user.UserDtos.LoginRequest;
 import com.valenlabs.iopms.user.UserDtos.LoginResponse;
 import jakarta.validation.Valid;
