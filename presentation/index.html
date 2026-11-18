@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IOPMS — Project Presentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span> IOPMS <span class="brand-sub">/ Valen Labs</span></div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="notesBtn" title="Toggle speaker notes (N)">Notes</button>
+      <span class="counter" id="counter">01 / 14</span>
+    </div>
+  </header>
+
+  <main class="deck" id="deck">
+
+    <!-- 1 — Cover -->
+    <section class="slide active">
+      <div class="cover">
+        <p class="eyebrow">PROJECT PRESENTATION</p>
+        <h1>IOPMS</h1>
+        <p class="tagline">Intern Operations &amp; Performance Management System</p>
+        <p class="cover-sub">An internal platform that brings attendance, tasks, daily reports,<br>project submissions and performance reporting into one place.</p>
+        <div class="cover-chips">
+          <span class="chip">Java 21</span><span class="chip">Spring Boot 3.4</span><span class="chip">JWT</span>
+          <span class="chip">Supabase / PostgreSQL</span><span class="chip">REST + Swagger</span>
+        </div>
+        <p class="cover-by">Prepared by <strong>Ayush Kumar Sahu</strong> · for Valen Labs</p>
+      </div>
+      <aside class="notes"><strong>Opening:</strong> "IOPMS replaces scattered spreadsheets and DMs with one system of record for intern operations. Two roles — admin and intern — with strict rules around attendance and feedback."</aside>
+    </section>
+
+    <!-- 2 — Problem -->
+    <section class="slide">
+      <p class="eyebrow">01 · WHY BUILD IT</p>
+      <h2>The problem</h2>
+      <div class="grid-2">
+        <div class="card"><div class="card-icon">✗</div><h3>Scattered records</h3><p>Attendance in spreadsheets, tasks in chats, reports in email — no single source of truth.</p></div>
+        <div class="card"><div class="card-icon">✗</div><h3>Untrusted working hours</h3><p>Manual hour entries can be wrong or disputed; there is no reliable audit trail.</p></div>
+        <div class="card"><div class="card-icon">✗</div><h3>No structured feedback</h3><p>Report reviews and deliverable comments are informal and easy to lose.</p></div>
+        <div class="card"><div class="card-icon">✗</div><h3>No consolidated view</h3><p>An admin needs one click to see an intern's whole month before evaluation.</p></div>
+      </div>
+      <div class="callout"><span class="callout-label">GOAL</span> One internal web app: interns self-manage their work, admins track and evaluate it — with rules enforced by the server, not by trust.</div>
+      <aside class="notes"><strong>Talking point:</strong> Each pain point maps directly to a module. Emphasise "server-enforced rules" — that's the engineering theme of the project.</aside>
+    </section>
+
+    <!-- 3 — Scope -->
+    <section class="slide">
+      <p class="eyebrow">02 · SCOPE</p>
+      <h2>Seven modules, two personas</h2>
+      <div class="grid-3 compact">
+        <div class="card mini"><span class="tag">A</span><h3>Auth &amp; users</h3><p>Login, roles, intern CRUD, profile</p></div>
+        <div class="card mini"><span class="tag">B</span><h3>Attendance</h3><p>Sessions, hours, corrections, audit</p></div>
+        <div class="card mini"><span class="tag">C</span><h3>Tasks</h3><p>Assignment, progress, remarks</p></div>
+        <div class="card mini"><span class="tag">D</span><h3>Daily reports</h3><p>One per day, review workflow</p></div>
+        <div class="card mini"><span class="tag">E</span><h3>Projects</h3><p>Deliverables with version history</p></div>
+        <div class="card mini"><span class="tag">F</span><h3>Dashboard</h3><p>Live team counters</p></div>
+        <div class="card mini"><span class="tag">G</span><h3>Intern report</h3><p>360° view + CSV export</p></div>
+        <div class="card mini highlight"><h3>Admin</h3><p>Manages everything, reviews and reports</p></div>
+        <div class="card mini highlight"><h3>Intern</h3><p>Self-service work portal, reads feedback</p></div>
+      </div>
+      <aside class="notes">Modules A–G came from the assessment brief. The two personas are served by separate UIs but the same backend and JWT.</aside>
+    </section>
+
+    <!-- 4 — Stack -->
+    <section class="slide">
+      <p class="eyebrow">03 · TECHNOLOGY CHOICES</p>
+      <h2>What is used — and why</h2>
+      <table class="why-table">
+        <thead><tr><th>Technology</th><th>Role in the project</th><th>Why this choice</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Java 21 + Spring Boot 3.4</strong></td><td>Backend, REST APIs</td><td>Industry standard; dependency injection, auto-config, convention over configuration → fast, maintainable development.</td></tr>
+          <tr><td><strong>Spring Data JPA / Hibernate</strong></td><td>Persistence layer</td><td>Repository pattern removes boilerplate SQL; same code runs on H2 (dev/tests) and PostgreSQL (Supabase).</td></tr>
+          <tr><td><strong>Spring Security + JWT (jjwt)</strong></td><td>Auth &amp; authorization</td><td>Stateless tokens suit a REST API; roles in URL rules <em>and</em> service logic; no server-side session to manage.</td></tr>
+          <tr><td><strong>Supabase (PostgreSQL 17)</strong></td><td>Production database</td><td>Managed DB — no server admin; real SQL constraints (unique index, audit table) do the enforcement.</td></tr>
+          <tr><td><strong>HTML / CSS / JS</strong></td><td>Two browser panels</td><td>Zero build step, served directly by Spring Boot; keeps focus on backend correctness.</td></tr>
+          <tr><td><strong>Maven · Swagger · Postman</strong></td><td>Build · live docs · API testing</td><td>Reproducible builds, self-documenting API, shareable request collection for the assessment.</td></tr>
+        </tbody>
+      </table>
+      <aside class="notes">If asked "why not React?" — no build step, no npm toolchain, and the assessment graded backend depth. If asked "why Supabase?" — managed PostgreSQL with a dashboard to verify data quickly.</aside>
+    </section>
+
+    <!-- 5 — Architecture -->
+    <section class="slide">
+      <p class="eyebrow">04 · ARCHITECTURE</p>
+      <h2>Layered, package-per-feature</h2>
+      <div class="arch">
+        <div class="arch-row"><div class="arch-box browser">Browser — admin.html / intern.html · fetch + Bearer JWT</div></div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-row"><div class="arch-box security">SecurityConfig → JwtAuthFilter <span>validates token, sets ROLE_ADMIN / ROLE_INTERN</span></div></div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-row"><div class="arch-box">Controllers <span>routing · @Valid · HTTP status codes</span></div></div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-row"><div class="arch-box wide">Services <span>business rules · @Transactional · ownership checks</span></div></div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-row"><div class="arch-box">Repositories (Spring Data JPA) <span>derived + JPQL queries</span></div></div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-row"><div class="arch-box db">Supabase PostgreSQL / H2 <span>DDL constraints enforce invariants</span></div></div>
+      </div>
+      <p class="footnote">Cross-cutting: <code>GlobalExceptionHandler</code> maps validation → 400, business rules → 400/403/409, unexpected → 500. DTOs are records; enums are stored as VARCHAR.</p>
+      <aside class="notes">Point out the one-way dependency: controllers never talk to repositories directly. The service layer is where all business rules live, so they can be unit-tested with Mockito.</aside>
+    </section>
+
+    <!-- 6 — Auth -->
+    <section class="slide">
+      <p class="eyebrow">05 · SECURITY</p>
+      <h2>Authentication &amp; authorization</h2>
+      <div class="flow">
+        <div class="flow-step"><span class="num">1</span><strong>Login</strong><small>email + password</small></div>
+        <div class="flow-step"><span class="num">2</span><strong>BCrypt verify</strong><small>hash check, active flag</small></div>
+        <div class="flow-step"><span class="num">3</span><strong>JWT issued</strong><small>HS256, role + user id</small></div>
+        <div class="flow-step"><span class="num">4</span><strong>Bearer on every call</strong><small>filter validates</small></div>
+        <div class="flow-step"><span class="num">5</span><strong>Role checks</strong><small>URL + service layer</small></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3>Two layers of protection</h3><ul>
+          <li><code>/api/admin/**</code> → ADMIN only</li>
+          <li><code>/api/intern/**</code> → INTERN only</li>
+          <li>Intern-scoped queries take the user id <strong>from the token</strong>, never from a request parameter</li>
+        </ul></div>
+        <div class="card"><h3>Hardening details</h3><ul>
+          <li>BCrypt hashes — plaintext passwords never stored</li>
+          <li>Deactivated accounts rejected even with a valid token</li>
+          <li><code>JWT_SECRET</code> ≥ 32 bytes; fails fast at startup</li>
+          <li><code>@Valid</code> on every request body</li>
+        </ul></div>
+      </div>
+      <aside class="notes">Emphasise the ownership rule: an intern cannot read or edit another intern's data by guessing an ID — the backend derives identity from the JWT.</aside>
+    </section>
+
+    <!-- 7 — Attendance -->
+    <section class="slide">
+      <p class="eyebrow">06 · MODULE B (DEEP DIVE)</p>
+      <h2>Attendance — rules that cannot be cheated</h2>
+      <div class="split">
+        <div>
+          <div class="card"><h3>The rules</h3><ul>
+            <li>Check-in / check-out buttons use the <strong>server clock only</strong> — no client timestamps accepted</li>
+            <li><strong>One open session</strong> per intern (service rule + DB partial unique index)</li>
+            <li>End without start is rejected</li>
+            <li>Minutes computed by the backend; monthly totals + incomplete-session detection</li>
+            <li>Admin corrections require a <strong>mandatory reason</strong> and write an append-only audit row</li>
+          </ul></div>
+        </div>
+        <div>
+          <div class="card dark-card"><h3>Why it matters</h3><p>Time records are the basis of evaluation and stipend decisions. If interns could post their own timestamps, the data would be worthless in a dispute. The audit table answers "who changed this and why?" later.</p></div>
+          <div class="card"><h3>Intern limitations</h3><p>No endpoint exists for an intern to edit hours or history — read-only views, two write actions: <strong>start</strong> and <strong>end</strong>.</p></div>
+        </div>
+      </div>
+      <aside class="notes">This is the most heavily tested module: 5 Mockito unit tests plus e2e coverage of start/end, audited correction (480 minutes), and 403 role isolation. Mention the partial unique index as defence in depth.</aside>
+    </section>
+
+    <!-- 8 — Work lifecycle -->
+    <section class="slide">
+      <p class="eyebrow">07 · MODULES C–E</p>
+      <h2>The work lifecycle</h2>
+      <div class="grid-3">
+        <div class="card"><span class="tag">C</span><h3>Tasks</h3><ul>
+          <li>Admin assigns: title, description, assignee, priority, dates</li>
+          <li>Intern updates progress 0–100% and status</li>
+          <li>Only admin can set <strong>COMPLETED</strong> or <strong>CHANGES_REQUESTED</strong></li>
+          <li>Remarks flow both ways</li>
+        </ul></div>
+        <div class="card"><span class="tag">D</span><h3>Daily reports</h3><ul>
+          <li><strong>One per intern per date</strong> — DB unique constraint</li>
+          <li>Tasks, work, time split, progress, challenges, plan, links</li>
+          <li>Admin approves or requests changes with remarks</li>
+          <li>Missing-report listing for a given date</li>
+        </ul></div>
+        <div class="card"><span class="tag">E</span><h3>Projects</h3><ul>
+          <li>Multi-intern assignment, supervisor, timeline</li>
+          <li>Deliverable = repo URL + notes</li>
+          <li><strong>Automatic version numbers</strong> per (project, intern)</li>
+          <li>Every submission keeps review comments</li>
+        </ul></div>
+      </div>
+      <div class="callout"><span class="callout-label">DESIGN RULE</span> Interns can only progress and submit; admins own completion and evaluation.</div>
+      <aside class="notes">Version history matters: a "CHANGES_REQUESTED" review doesn't overwrite the old submission — the intern submits v2, and both remain visible with their feedback.</aside>
+    </section>
+
+    <!-- 9 — Visibility -->
+    <section class="slide">
+      <p class="eyebrow">08 · MODULES F–G</p>
+      <h2>From raw data to decisions</h2>
+      <div class="grid-2">
+        <div class="card"><span class="tag">F</span><h3>Admin dashboard</h3><p>Five live sections, all computed server-side:</p>
+          <div class="stat-grid">
+            <div><strong>Team</strong><span>total · active · completed · working now</span></div>
+            <div><strong>Attendance</strong><span>present today · hours · incomplete</span></div>
+            <div><strong>Tasks</strong><span>total · completed · pending · overdue</span></div>
+            <div><strong>Reports</strong><span>submitted · missing · awaiting · approved</span></div>
+            <div><strong>Projects</strong><span>active · completed · pending reviews</span></div>
+          </div>
+        </div>
+        <div class="card"><span class="tag">G</span><h3>Consolidated intern report</h3><p>One endpoint assembles everything for one intern, with a month filter:</p>
+          <ol class="numbered">
+            <li>Profile &amp; joining details</li>
+            <li>Attendance sessions + total hours</li>
+            <li>Tasks and progress</li>
+            <li>Daily reports + admin feedback</li>
+            <li>Project submissions, versions, comments</li>
+          </ol>
+          <p class="mt"><strong>CSV export</strong> — same data as a download, no extra library.</p>
+        </div>
+      </div>
+      <aside class="notes">The report answers the assessment's "evaluation" requirement. CSV is written by hand with proper escaping — a deliberate choice to avoid a heavyweight export dependency for one format.</aside>
+    </section>
+
+    <!-- 10 — Data model -->
+    <section class="slide">
+      <p class="eyebrow">09 · DATA MODEL</p>
+      <h2>Eight tables, constraints doing real work</h2>
+      <div class="grid-4">
+        <div class="table-card"><strong>users</strong><span>admins + interns, BCrypt hash, role, active flag</span></div>
+        <div class="table-card"><strong>attendance</strong><span>sessions, minutes, check-in/out; one open session</span></div>
+        <div class="table-card accent"><strong>attendance_audit</strong><span>append-only correction log with reason</span></div>
+        <div class="table-card"><strong>tasks</strong><span>assignee, priority, status, progress, remarks</span></div>
+        <div class="table-card accent"><strong>daily_reports</strong><span>unique (intern_id, date)</span></div>
+        <div class="table-card"><strong>projects</strong><span>supervisor, dates, status</span></div>
+        <div class="table-card"><strong>project_interns</strong><span>many-to-many assignment</span></div>
+        <div class="table-card"><strong>project_submission</strong><span>versioned repo links + feedback</span></div>
+      </div>
+      <p class="footnote">Full DDL in <code>schema-postgres.sql</code>. Hibernate <code>ddl-auto=update</code> bootstraps tables on first start; the SQL file is the authoritative human-readable schema.</p>
+      <aside class="notes">Call out the two highlighted constraints — they are the invariants of the whole system: one report per day, and every correction recorded.</aside>
+    </section>
+
+    <!-- 11 — Supabase -->
+    <section class="slide">
+      <p class="eyebrow">10 · DATABASE IN PRACTICE</p>
+      <h2>Connecting to Supabase</h2>
+      <div class="split">
+        <div class="card"><h3>How it is configured</h3><ul>
+          <li>Four environment variables: <code>DB_URL</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>JWT_SECRET</code></li>
+          <li><code>run-supabase.ps1</code> sets them and prompts for the password (no secrets in git)</li>
+          <li>No <code>dev</code> profile for Supabase — that profile intentionally uses H2</li>
+          <li>First boot creates the schema and seeds the admin account</li>
+        </ul></div>
+        <div class="card warn"><h3>Real-world gotcha we solved</h3><p>Supabase's direct host is <strong>IPv6-only</strong> — unreachable from most home networks (<code>UnknownHostException</code>).</p><p class="mt">Solution: <strong>transaction pooler</strong> — <code>aws-0-ap-northeast-1.pooler.supabase.com:6543</code>, user <code>postgres.&lt;project-ref&gt;</code>, <code>sslmode=require</code>, <code>prepareThreshold=0</code>.</p></div>
+      </div>
+      <aside class="notes">Good interviewer talking point: this wasn't in the brief — it came from actually running the app. Trial-and-error across regions (Mumbai, Singapore) before Tokyo worked.</aside>
+    </section>
+
+    <!-- 12 — Testing -->
+    <section class="slide">
+      <p class="eyebrow">11 · QUALITY</p>
+      <h2>14 tests, green</h2>
+      <div class="grid-2">
+        <div class="card"><span class="tag">UNIT</span><h3>AttendanceServiceTest — 5 tests (Mockito)</h3><ul>
+          <li>one open session</li><li>end-without-start rejected</li><li>server-side hour computation</li><li>correction recompute + audit row</li><li>invalid correction rejected</li>
+        </ul></div>
+        <div class="card"><span class="tag">E2E</span><h3>AppFlowTest — 9 tests (HTTP + H2)</h3><ul>
+          <li>admin login → create intern → role isolation (401/403)</li><li>attendance rules + audited 480-min correction</li><li>task progress rules</li><li>one report per day (409) + review</li><li>versioned submissions + dashboard + CSV report</li>
+        </ul></div>
+      </div>
+      <div class="callout"><span class="callout-label">ALSO VERIFIED</span> Both panels clicked through in a real browser: intern creation, check-in/check-out cycle, progress update, report + deliverable submission, admin feedback flowing back to the intern, zero console errors.</div>
+      <aside class="notes">Tests caught two real bugs during development: a missing save() in intern creation, and a lazy-initialisation crash when listing projects with assignees. Both fixed and covered by regression assertions.</aside>
+    </section>
+
+    <!-- 13 — Demo -->
+    <section class="slide">
+      <p class="eyebrow">12 · LIVE DEMO</p>
+      <h2>How to run it</h2>
+      <div class="grid-2">
+        <div class="card"><h3>Start</h3>
+          <pre><code># local, no setup (H2)
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"
+
+# against Supabase
+.\run-supabase.ps1</code></pre>
+          <p class="footnote">Then open <strong>http://localhost:8080</strong> · Swagger at <code>/swagger-ui.html</code></p>
+        </div>
+        <div class="card"><h3>Logins</h3>
+          <table class="demo-table"><thead><tr><th>Panel</th><th>Email</th><th>Password</th></tr></thead><tbody>
+            <tr><td>Admin</td><td>admin@valenlabs.com</td><td>Admin@123</td></tr>
+            <tr><td>Intern</td><td>ayush@valenlabs.com</td><td>Intern@123</td></tr>
+          </tbody></table>
+          <p class="mt">One login page → routed by role. Demo intern is created from the admin's <strong>Interns</strong> tab on a fresh database.</p>
+        </div>
+      </div>
+      <p class="footnote mt">Source: <code>github.com/Ayush0G/iopms</code> · schema, Postman collection, architecture doc and screenshots all in the repo.</p>
+      <aside class="notes">If time permits, demo in this order: admin dashboard → create intern → logout → intern check-in → submit report → logout → admin approves with remarks → intern sees feedback.</aside>
+    </section>
+
+    <!-- 14 — Wrap -->
+    <section class="slide">
+      <p class="eyebrow">13 · WRAP-UP</p>
+      <h2>Honest limitations &amp; next steps</h2>
+      <div class="grid-2">
+        <div class="card"><h3>Deliberately out of scope</h3><ul>
+          <li>PDF export — CSV implemented instead (no extra dependency)</li>
+          <li>File attachments — repo/link field on reports and submissions</li>
+          <li>Walkthrough video — to be recorded separately</li>
+        </ul></div>
+        <div class="card"><h3>What I would add next</h3><ul>
+          <li>Refresh tokens + password reset flow</li>
+          <li>Pagination and search on all lists</li>
+          <li>Email notifications on reviews</li>
+          <li>Flyway migrations instead of <code>ddl-auto=update</code></li>
+        </ul></div>
+      </div>
+      <div class="thanks">Thank you — questions?</div>
+      <aside class="notes">Close by tying back to the goal: every rule in the brief is enforced in code, not just in the UI. The system is running end-to-end on Supabase with 14 passing tests.</aside>
+    </section>
+
+  </main>
+
+  <footer class="controls">
+    <button id="prevBtn" class="nav-btn" aria-label="Previous slide">← Prev</button>
+    <span class="hint">Use <kbd>←</kbd> <kbd>→</kbd> or <kbd>Space</kbd> · press <kbd>N</kbd> for notes · <kbd>P</kbd> to print</span>
+    <button id="nextBtn" class="nav-btn primary" aria-label="Next slide">Next →</button>
+  </footer>
+
+  <script src="presentation.js"></script>
+</body>
+</html>

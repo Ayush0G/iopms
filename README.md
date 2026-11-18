@@ -93,6 +93,7 @@ mvn test     # 14/14 green
 
 ## Documentation
 
+- [`presentation/index.html`](presentation/index.html) — **interviewer slide deck** (HTML/CSS/JS; arrow keys, speaker notes with `N`, print to PDF with `P`)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — layers, data model, design decisions, security, environments
 - [`schema-postgres.sql`](schema-postgres.sql) — full database schema
 - [`docs/screenshots/`](docs/screenshots/) — module screenshots
@@ -125,5 +126,6 @@ iopms/
 - [x] Test cases — `mvn test` → **14/14 passing**
 - [x] System architecture document ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
 - [x] Screenshots of working modules ([`docs/screenshots/`](docs/screenshots/))
+- [x] Presentation deck for interviewers ([`presentation/index.html`](presentation/index.html))
 - [ ] Walkthrough video (record with Win+G / OBS:
       Admin Dashboard → Interns → Attendance → Tasks → Reports → Projects → Intern portal)
