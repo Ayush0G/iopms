@@ -16,7 +16,7 @@ async function loadProfile() {
       <p class="ok" id="pf-msg"></p></div>`;
   document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const f = Object.fromEntries(new FormData(e.target).entries());
+    const f = getForm('profile-form');
     try { await API.put('/auth/me', { name: f['pf-name'], phone: f['pf-phone'], college: f['pf-college'] });
       document.getElementById('pf-msg').textContent = 'Saved.'; }
     catch (ex) { showErr(ex); }
@@ -33,7 +33,8 @@ async function loadAttendance() {
   const open = history.find(a => a.checkOut == null && a.date === today());
   const total = history.reduce((s, a) => s + (a.minutes || 0), 0);
   const m = month.split('-');
-  document.getElementById('tab-attendance').innerHTML = `
+  // render into att-body so the month picker (att-month) survives re-renders
+  document.getElementById('att-body').innerHTML = `
     <div class="card">
       <h2>Work session — ${MONTHS[Number(m[1]) - 1]} ${m[0]}</h2>
       <div class="row">
@@ -114,7 +115,7 @@ async function loadReports() {
     </div>`;
   document.getElementById('report-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const f = Object.fromEntries(new FormData(e.target).entries());
+    const f = getForm('report-form');
     try {
       await API.post('/intern/reports', {
         date: f['r-date'], tasksCompleted: f['r-tasks'], workPerformed: f['r-work'],

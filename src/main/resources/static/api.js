@@ -82,6 +82,14 @@ function tabs(loaders) {
 function today() { return new Date().toISOString().slice(0, 10); }
 function thisMonth() { return new Date().toISOString().slice(0, 7); }
 
+/** Reads form fields by element id; these inputs carry no name attribute, so FormData is empty. */
+function getForm(id) {
+  return Object.fromEntries(
+      [...document.getElementById(id).querySelectorAll('input, select, textarea')]
+          .map(el => [el.id, el.value])
+          .filter(([key]) => key));
+}
+
 function downloadCsv(filename, text) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));

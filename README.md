@@ -15,8 +15,13 @@ allocation, daily reports, project submissions and admin reporting.
 
 ## Quick start (no database needed)
 
+```powershell
+# Windows PowerShell: keep the -D flag quoted, or PowerShell splits it on the dots
+mvn spring-boot:run "-Dspring-boot.run.profiles=dev"   # uses an embedded H2 file DB
+```
+
 ```bash
-mvn spring-boot:run -Dspring-boot.run.profiles=dev   # uses an embedded H2 file DB
+mvn spring-boot:run -Dspring-boot.run.profiles=dev     # macOS / Linux
 ```
 
 Open http://localhost:8080 — log in with the seeded admin:

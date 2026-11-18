@@ -1,5 +1,5 @@
 /* Admin screens (Modules A-G). Each tab loads its data on click. */
-const state = { interns: [], editInternId: null, editTaskId: null, editProjectId: null };
+const state = { interns: [], editInternId: null, editInternActive: null, editTaskId: null, editProjectId: null };
 
 async function loadInterns() {
   state.interns = await API.get('/admin/interns');
@@ -14,8 +14,13 @@ async function loadInterns() {
         <button class="small ghost" onclick="openInternReport(${i.id}, '${esc(i.name)}')">Report</button>
       </td>
     </tr>`).join('');
-  document.getElementById('intern-list').innerHTML =
-    `<table><tr><th>Name</th><th>Email</th><th>College</th><th>Joined</th><th>End</th><th>Status</th><th></th></tr>${rows}</table>`;
+  // intern-list only exists once the Interns tab has rendered; other tabs call
+  // this just to refresh state.interns for their assignee pickers
+  const list = document.getElementById('intern-list');
+  if (list) {
+    list.innerHTML =
+        `<table><tr><th>Name</th><th>Email</th><th>College</th><th>Joined</th><th>End</th><th>Status</th><th></th></tr>${rows}</table>`;
+  }
   // Assignee pickers in Tasks/Projects/Reports filters
   const opts = state.interns.map(i => `<option value="${i.id}">${esc(i.name)}</option>`).join('');
   ['task-assignee', 'report-intern', 'project-interns'].forEach(id => {
@@ -27,6 +32,7 @@ async function loadInterns() {
 function fillIntern(json) {
   const i = JSON.parse(json);
   state.editInternId = i.id;
+  state.editInternActive = i.active;
   setForm('intern-form', { name: i.name, email: i.email, college: i.college, joinedDate: i.joinedDate, endDate: i.endDate });
   document.getElementById('intern-editing').textContent = 'Editing #' + i.id + ' (leave password empty to keep it)';
 }
@@ -38,7 +44,7 @@ async function saveIntern(e) {
     if (state.editInternId) {
       await API.put('/admin/interns/' + state.editInternId, {
         name: f.name, phone: f.phone, college: f.college, joinedDate: f.joinedDate || null,
-        endDate: f.endDate || null, active: true,
+        endDate: f.endDate || null, active: state.editInternActive,
         ...(f.password ? { password: f.password } : {}),
       });
     } else {
@@ -50,8 +56,14 @@ async function saveIntern(e) {
 }
 
 async function toggleIntern(id, active) {
-  try { await API.put('/admin/interns/' + id, { name: prompt('Confirm intern name (required):') || '', phone: '', college: '', active: !active, joinedDate: null, endDate: null }); loadInterns(); }
-  catch (ex) { showErr(ex); }
+  const i = state.interns.find(x => x.id === id);
+  try {
+    await API.put('/admin/interns/' + id, {
+      name: i.name, phone: i.phone || '', college: i.college || '',
+      joinedDate: i.joinedDate, endDate: i.endDate, active: !active,
+    });
+    loadInterns();
+  } catch (ex) { showErr(ex); }
 }
 
 /* ---- Dashboard ---- */
@@ -352,9 +364,6 @@ async function downloadInternCsv() {
 }
 
 /* ---- form helpers ---- */
-function getForm(id) {
-  return Object.fromEntries(new FormData(document.getElementById(id)).entries());
-}
 function setForm(id, values) {
   Object.entries(values).forEach(([k, v]) => { const el = document.getElementById(k); if (el && v != null) el.value = v; });
 }
