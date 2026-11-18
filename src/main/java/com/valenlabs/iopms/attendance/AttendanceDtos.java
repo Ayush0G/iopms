@@ -3,6 +3,7 @@ package com.valenlabs.iopms.attendance;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /** Request shapes for attendance. */
