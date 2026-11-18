@@ -1,0 +1,252 @@
+{
+  "info": {
+    "name": "IOPMS API",
+    "description": "Import into Postman. Set the collection variable 'token' after running 'Login (admin)' or 'Login (intern)' - responses are wired to fill it automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (admin)",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('token', pm.response.json().token);"] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@valenlabs.com\",\n  \"password\": \"Admin@123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (intern)",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('token', pm.response.json().token);"] } }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"intern@valenlabs.com\",\n  \"password\": \"Intern@123\"\n}" }
+          }
+        },
+        {
+          "name": "My profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/auth/me",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ayush Kumar Sahu\",\n  \"phone\": \"9999999999\",\n  \"college\": \"VIT\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Create intern",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/interns",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Intern One\",\n  \"email\": \"intern@valenlabs.com\",\n  \"password\": \"Intern@123\",\n  \"college\": \"VIT\",\n  \"joinedDate\": \"2026-01-05\"\n}" }
+          }
+        },
+        {
+          "name": "List interns",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/interns" }
+        },
+        {
+          "name": "Update / deactivate intern",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/interns/1",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Intern One\",\n  \"phone\": \"\",\n  \"college\": \"VIT\",\n  \"active\": false,\n  \"joinedDate\": \"2026-01-05\",\n  \"endDate\": \"2026-06-01\"\n}" }
+          }
+        },
+        {
+          "name": "Dashboard",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/dashboard" }
+        },
+        {
+          "name": "Attendance on a date",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/attendance?date=2026-01-06" }
+        },
+        {
+          "name": "Correct attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/attendance/1/correct",
+            "body": { "mode": "raw", "raw": "{\n  \"checkIn\": \"2026-01-06T09:00:00\",\n  \"checkOut\": \"2026-01-06T17:00:00\",\n  \"reason\": \"system outage\"\n}" }
+          }
+        },
+        {
+          "name": "Attendance audit history",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/attendance/1/audit" }
+        },
+        {
+          "name": "Create task",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/tasks",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Build IOPMS MVP\",\n  \"description\": \"All modules\",\n  \"assigneeId\": 1,\n  \"priority\": \"HIGH\",\n  \"startDate\": \"2026-01-05\",\n  \"deadline\": \"2026-01-20\",\n  \"status\": \"NOT_STARTED\"\n}" }
+          }
+        },
+        {
+          "name": "List / filter tasks",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/tasks?internId=1&status=IN_PROGRESS" }
+        },
+        {
+          "name": "Review daily report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/reports/1/review",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"APPROVED\",\n  \"remarks\": \"good work\"\n}" }
+          }
+        },
+        {
+          "name": "Missing reports",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/reports/missing?date=2026-01-06" }
+        },
+        {
+          "name": "Create project",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/projects",
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"IOPMS\",\n  \"description\": \"MVP\",\n  \"supervisor\": \"Valen Labs\",\n  \"startDate\": \"2026-01-05\",\n  \"expectedEndDate\": \"2026-03-01\",\n  \"internIds\": [1]\n}" }
+          }
+        },
+        {
+          "name": "Review project submission",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/submissions/1/review",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"CHANGES_REQUESTED\",\n  \"remarks\": \"add swagger\"\n}" }
+          }
+        },
+        {
+          "name": "Intern consolidated report",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/interns/1/report?month=2026-01" }
+        },
+        {
+          "name": "Intern report CSV",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/admin/interns/1/report.csv?month=2026-01" }
+        }
+      ]
+    },
+    {
+      "name": "Intern",
+      "item": [
+        {
+          "name": "Start work",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/attendance/start" }
+        },
+        {
+          "name": "End work",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/attendance/end" }
+        },
+        {
+          "name": "My attendance (month)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/attendance?month=2026-01" }
+        },
+        {
+          "name": "Incomplete sessions",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/attendance/incomplete" }
+        },
+        {
+          "name": "My tasks",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/tasks" }
+        },
+        {
+          "name": "Update task progress",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/intern/tasks/1/progress",
+            "body": { "mode": "raw", "raw": "{\n  \"progress\": 80,\n  \"status\": \"UNDER_REVIEW\"\n}" }
+          }
+        },
+        {
+          "name": "Submit daily report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/intern/reports",
+            "body": { "mode": "raw", "raw": "{\n  \"date\": \"2026-01-06\",\n  \"tasksCompleted\": \"Modules A-B\",\n  \"workPerformed\": \"Coding\",\n  \"timeSpent\": \"A: 3h, B: 4h\",\n  \"progress\": 60,\n  \"challenges\": \"JWT expiry\",\n  \"pendingWork\": \"Dashboard\",\n  \"nextDayPlan\": \"Dashboard\",\n  \"links\": \"https://github.com/ayush/iopms\"\n}" }
+          }
+        },
+        {
+          "name": "My projects",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/projects" }
+        },
+        {
+          "name": "Submit project deliverable",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/intern/projects/1/submissions",
+            "body": { "mode": "raw", "raw": "{\n  \"repoUrl\": \"https://github.com/ayush/iopms\",\n  \"notes\": \"first cut\"\n}" }
+          }
+        },
+        {
+          "name": "My submissions + feedback",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{baseUrl}}/api/intern/submissions" }
+        }
+      ]
+    }
+  ]
+}

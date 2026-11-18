@@ -81,7 +81,8 @@ class AttendanceServiceTest {
     void correctionWritesAuditAndRecomputes() {
         User u = user(1);
         User admin = user(9);
-        Attendance session = openSession(u, LocalDateTime.now().minusHours(2));
+        LocalDateTime originalIn = LocalDateTime.now().minusHours(2);
+        Attendance session = openSession(u, originalIn);
         session.setId(5L);
         when(attendance.findById(5L)).thenReturn(Optional.of(session));
         LocalDateTime in = LocalDateTime.now().minusHours(3);
@@ -92,12 +93,13 @@ class AttendanceServiceTest {
 
         assertEquals(Duration.between(in, out).toMinutes(), resp.minutes());
         assertEquals(Attendance.CorrectionState.CORRECTED, session.getCorrection());
+        assertEquals(in, session.getCheckIn());
 
         ArgumentCaptor<AttendanceAudit> audit = ArgumentCaptor.forClass(AttendanceAudit.class);
         verify(audits).save(audit.capture());
         assertEquals("forgot to end", audit.getValue().getReason());
         assertEquals(admin.getId(), audit.getValue().getAdmin().getId());
-        assertEquals(session.getCheckIn(), audit.getValue().getOldCheckIn());
+        assertEquals(originalIn, audit.getValue().getOldCheckIn());
     }
 
     @Test

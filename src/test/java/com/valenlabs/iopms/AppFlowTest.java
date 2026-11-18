@@ -14,6 +14,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -93,18 +94,24 @@ class AppFlowTest {
     @Test
     @Order(5)
     void adminCorrectsAttendanceWithAudit() {
-        // fetch the record through the admin per-intern endpoint
+        // fetch the record through the admin per-intern endpoint (session was created today)
+        String month = LocalDate.now().toString().substring(0, 7);
         ResponseEntity<Map[]> adminHistory = http.exchange(
-                "/api/admin/attendance/intern/" + internId + "?month=2026-01",
+                "/api/admin/attendance/intern/" + internId + "?month=" + month,
                 HttpMethod.GET, new HttpEntity<>(auth(adminToken)), Map[].class);
         assertEquals(200, adminHistory.getStatusCode().value());
         long attId = ((Number) adminHistory.getBody()[0].get("id")).longValue();
 
         ResponseEntity<Map> res = call("POST", "/api/admin/attendance/" + attId + "/correct", adminToken, Map.of(
-                "checkIn", "2026-01-06T09:00:00", "checkOut", "2026-01-06T17:00:00", "reason", "system outage"));
+                "checkIn", LocalDate.now().atTime(9, 0).toString(),
+                "checkOut", LocalDate.now().atTime(17, 0).toString(), "reason", "system outage"));
         assertEquals(200, res.getStatusCode().value(), res.getBody() + "");
         assertEquals(480, ((Number) res.getBody().get("minutes")).longValue());
-        assertEquals(200, call("GET", "/api/admin/attendance/" + attId + "/audit", adminToken, null).getStatusCode().value());
+
+        ResponseEntity<String> audit = http.exchange("/api/admin/attendance/" + attId + "/audit",
+                HttpMethod.GET, new HttpEntity<>(auth(adminToken)), String.class);
+        assertEquals(200, audit.getStatusCode().value());
+        assertTrue(audit.getBody().contains("system outage"), "audit must record the reason");
     }
 
     private HttpHeaders auth(String token) {
@@ -136,8 +143,9 @@ class AppFlowTest {
     @Test
     @Order(7)
     void dailyReportOnePerDayAndReview() {
+        String today = LocalDate.now().toString();
         ResponseEntity<Map> res = call("POST", "/api/intern/reports", internToken, Map.of(
-                "date", "2026-01-06", "tasksCompleted", "Modules A-B", "workPerformed", "Coding",
+                "date", today, "tasksCompleted", "Modules A-B", "workPerformed", "Coding",
                 "timeSpent", "A: 3h, B: 4h", "progress", 60, "challenges", "JWT expiry",
                 "pendingWork", "Dashboard", "nextDayPlan", "Dashboard", "links", "https://github.com/x/y"));
         assertEquals(200, res.getStatusCode().value(), res.getBody() + "");
@@ -145,7 +153,7 @@ class AppFlowTest {
 
         // duplicate date rejected
         assertEquals(409, call("POST", "/api/intern/reports", internToken, Map.of(
-                "date", "2026-01-06", "tasksCompleted", "x", "workPerformed", "y", "timeSpent", "z",
+                "date", today, "tasksCompleted", "x", "workPerformed", "y", "timeSpent", "z",
                 "progress", 10, "pendingWork", "p", "nextDayPlan", "n")).getStatusCode().value());
 
         assertEquals(200, call("POST", "/api/admin/reports/" + reportId + "/review", adminToken,
@@ -182,17 +190,18 @@ class AppFlowTest {
     @Test
     @Order(9)
     void dashboardAndConsolidatedReport() {
+        String month = LocalDate.now().toString().substring(0, 7);
         ResponseEntity<Map> dash = call("GET", "/api/admin/dashboard", adminToken, null);
         assertEquals(200, dash.getStatusCode().value(), dash.getBody() + "");
         Map team = (Map) dash.getBody().get("team");
         assertEquals(1, ((Number) team.get("interns")).longValue());
 
-        ResponseEntity<Map> report = call("GET", "/api/admin/interns/" + internId + "/report?month=2026-01",
+        ResponseEntity<Map> report = call("GET", "/api/admin/interns/" + internId + "/report?month=" + month,
                 adminToken, null);
         assertEquals(200, report.getStatusCode().value(), report.getBody() + "");
         assertEquals(480L, ((Number) report.getBody().get("totalMinutes")).longValue());
 
-        ResponseEntity<String> csv = http.exchange("/api/admin/interns/" + internId + "/report.csv?month=2026-01",
+        ResponseEntity<String> csv = http.exchange("/api/admin/interns/" + internId + "/report.csv?month=" + month,
                 HttpMethod.GET, new HttpEntity<>(auth(adminToken)), String.class);
         assertEquals(200, csv.getStatusCode().value());
         assertTrue(csv.getBody().contains("ATTENDANCE"), "CSV must contain attendance section");

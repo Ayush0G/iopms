@@ -38,7 +38,8 @@ public class InternService {
         user.setCollege(req.college());
         user.setRole(Role.INTERN);
         user.setJoinedDate(req.joinedDate());
-        return ProfileResponse.from(user);
+        User saved = users.save(user);
+        return ProfileResponse.from(saved);
     }
 
     @Transactional
