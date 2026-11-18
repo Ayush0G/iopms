@@ -34,19 +34,28 @@ Create an intern from the **Interns** tab, log out, log in as that intern.
 
 ## Supabase setup (production)
 
-1. Create a Supabase project → copy the connection string:
-   `jdbc:postgresql://db.<project-ref>.supabase.co:5432/postgres?sslmode=require`
-2. Set environment variables before starting:
+The Supabase **direct connection is IPv6-only**, which most local networks can't reach.
+Use the **transaction pooler** instead (IPv4, port 6543, username `postgres.<project-ref>`).
 
-```bash
-export DB_URL="jdbc:postgresql://db.<ref>.supabase.co:5432/postgres?sslmode=require"
-export DB_USER=postgres
-export DB_PASSWORD=<database-password>
-export JWT_SECRET=<random-string-at-least-32-bytes>
-mvn spring-boot:run
+1. Create a Supabase project (note its region, e.g. `ap-northeast-1`) and copy the
+   **Transaction pooler** connection string from Dashboard → Connect.
+2. Set environment variables and start (or just use the helper script):
+
+```powershell
+.\run-supabase.ps1     # prompts for the DB password, generates a JWT secret
 ```
 
-JPA (`ddl-auto=update`) creates the tables on first start. The full schema is documented in
+```bash
+# macOS / Linux equivalent
+export DB_URL="jdbc:postgresql://aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0"
+export DB_USER=postgres.<project-ref>
+export DB_PASSWORD=<database-password>
+export JWT_SECRET=<random-string-at-least-32-bytes>
+mvn spring-boot:run     # no dev profile — that would switch back to H2
+```
+
+JPA (`ddl-auto=update`) creates the tables on first start and `SeedData` creates
+`admin@valenlabs.com / Admin@123`. The full schema is documented in
 [`schema-postgres.sql`](schema-postgres.sql) (note: Supabase is PostgreSQL; the schema is the
 authoritative deliverable — MySQL is not used).
 
