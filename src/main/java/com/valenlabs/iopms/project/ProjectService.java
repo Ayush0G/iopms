@@ -53,6 +53,10 @@ public class ProjectService {
     }
 
     private void apply(Project project, ProjectRequest req) {
+        if (req.expectedEndDate() != null && req.startDate() != null
+                && req.expectedEndDate().isBefore(req.startDate())) {
+            throw new ApiException(400, "Expected end date cannot be before the start date");
+        }
         project.setTitle(req.title());
         project.setDescription(req.description());
         project.setSupervisor(req.supervisor());

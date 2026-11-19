@@ -19,7 +19,7 @@ public final class ProjectDtos {
 
     public record ProjectRequest(@NotBlank String title, String description, @NotBlank String supervisor,
                                  @NotNull @PastOrPresent LocalDate startDate, LocalDate expectedEndDate,
-                                 ProjectStatus status, List<Long> internIds) {
+                                 ProjectStatus status, @NotNull List<Long> internIds) {
     }
 
     public record ProjectResponse(Long id, String title, String description, String supervisor,

@@ -4,10 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.Map;
@@ -29,6 +33,28 @@ public class GlobalExceptionHandler {
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .orElse("Invalid input");
         return error(400, message);
+    }
+
+    // Bad JSON (invalid date/enum/number) must be a client error, not a 500.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> unreadable(HttpMessageNotReadableException ex) {
+        return error(400, "Invalid request body — check field types and date format YYYY-MM-DD");
+    }
+
+    // Invalid path/query values: /interns/abc, ?date=nope, ?status=BOGUS, etc.
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> typeMismatch(MethodArgumentTypeMismatchException ex) {
+        return error(400, "Invalid value for '" + ex.getName() + "'");
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<?> missingParam(MissingServletRequestParameterException ex) {
+        return error(400, ex.getParameterName() + " is required");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<?> wrongMethod(HttpRequestMethodNotSupportedException ex) {
+        return error(405, "Method not allowed");
     }
 
     @ExceptionHandler(AccessDeniedException.class)

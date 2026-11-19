@@ -77,7 +77,7 @@ Schema reference: [`schema-postgres.sql`](schema-postgres.sql).
 ## Testing
 
 ```bash
-mvn test     # 14/14 green
+mvn test     # 15/15 green
 ```
 
 | Suite | Covers |
@@ -124,7 +124,7 @@ iopms/
 - [x] README with setup instructions
 - [x] Postman API collection
 - [x] Swagger documentation (auto-generated)
-- [x] Test cases — `mvn test` → **14/14 passing**
+- [x] Test cases — `mvn test` → **15/15 passing**
 - [x] System architecture document ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md))
 - [x] Screenshots of working modules ([`docs/screenshots/`](docs/screenshots/))
 - [x] Presentation deck for interviewers ([`presentation/index.html`](presentation/index.html))

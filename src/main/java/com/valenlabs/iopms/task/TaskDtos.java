@@ -17,7 +17,7 @@ public final class TaskDtos {
 
     /** Admin create/edit. Status and remarks can be set here too. */
     public record TaskRequest(@NotBlank String title, String description, @NotNull Long assigneeId,
-                              Priority priority, @NotNull @PastOrPresent LocalDate startDate,
+                              @NotNull Priority priority, @NotNull @PastOrPresent LocalDate startDate,
                               @NotNull LocalDate deadline, TaskStatus status, String adminRemarks) {
     }
 

@@ -217,4 +217,58 @@ class AppFlowTest {
         assertEquals(200, csv.getStatusCode().value());
         assertTrue(csv.getBody().contains("ATTENDANCE"), "CSV must contain attendance section");
     }
+
+    @Test
+    @Order(10)
+    void badInputReturns400Not500() {
+        // malformed date inside a JSON body (Jackson cannot read it)
+        ResponseEntity<Map> badDate = call("POST", "/api/intern/reports", internToken, Map.of(
+                "date", "2026-99-99", "tasksCompleted", "x", "workPerformed", "y",
+                "timeSpent", "z", "progress", 10, "pendingWork", "p", "nextDayPlan", "n"));
+        assertEquals(400, badDate.getStatusCode().value(), badDate.getBody() + "");
+
+        // invalid month query parameter
+        assertEquals(400, call("GET", "/api/admin/interns/" + internId + "/report?month=2026-13",
+                adminToken, null).getStatusCode().value());
+
+        // invalid date query parameter
+        assertEquals(400, call("GET", "/api/admin/attendance?date=not-a-date",
+                adminToken, null).getStatusCode().value());
+
+        // missing required query parameter
+        assertEquals(400, call("GET", "/api/admin/attendance", adminToken, null).getStatusCode().value());
+
+        // non-numeric path variable and invalid enum query parameter
+        assertEquals(400, call("GET", "/api/admin/interns/abc/report", adminToken, null).getStatusCode().value());
+        assertEquals(400, call("GET", "/api/admin/tasks?status=BOGUS", adminToken, null).getStatusCode().value());
+
+        // well-formed but forbidden date (future) is rejected by @PastOrPresent -> 400
+        assertEquals(400, call("POST", "/api/intern/reports", internToken, Map.of(
+                "date", LocalDate.now().plusDays(1).toString(), "tasksCompleted", "x",
+                "workPerformed", "y", "timeSpent", "z", "progress", 10,
+                "pendingWork", "p", "nextDayPlan", "n")).getStatusCode().value());
+
+        // cross-field date order checks in the services
+        assertEquals(400, call("POST", "/api/admin/tasks", adminToken, Map.of(
+                "title", "Bad task", "assigneeId", internId, "priority", "MEDIUM",
+                "startDate", LocalDate.now().toString(),
+                "deadline", LocalDate.now().minusDays(1).toString())).getStatusCode().value());
+        assertEquals(400, call("POST", "/api/admin/projects", adminToken, Map.of(
+                "title", "Bad project", "supervisor", "Valen Labs",
+                "startDate", LocalDate.now().toString(),
+                "expectedEndDate", LocalDate.now().minusDays(1).toString(),
+                "internIds", java.util.List.of(internId))).getStatusCode().value());
+        assertEquals(400, call("PUT", "/api/admin/interns/" + internId, adminToken, Map.of(
+                "name", "Ayush Kumar Sahu", "joinedDate", LocalDate.now().toString(),
+                "endDate", LocalDate.now().minusDays(1).toString())).getStatusCode().value());
+
+        // required fields missing (would otherwise NPE / store null priority -> 500)
+        assertEquals(400, call("POST", "/api/admin/tasks", adminToken, Map.of(
+                "title", "No priority", "assigneeId", internId,
+                "startDate", LocalDate.now().toString(),
+                "deadline", LocalDate.now().plusDays(1).toString())).getStatusCode().value());
+        assertEquals(400, call("POST", "/api/admin/projects", adminToken, Map.of(
+                "title", "No interns", "supervisor", "Valen Labs",
+                "startDate", LocalDate.now().toString())).getStatusCode().value());
+    }
 }

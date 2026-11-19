@@ -46,6 +46,9 @@ public class InternService {
     public ProfileResponse update(Long id, InternUpdateRequest req) {
         User user = users.findById(id)
                 .orElseThrow(() -> new ApiException(404, "Intern not found"));
+        if (req.endDate() != null && req.joinedDate() != null && req.endDate().isBefore(req.joinedDate())) {
+            throw new ApiException(400, "End date cannot be before the joining date");
+        }
         user.setName(req.name());
         user.setPhone(req.phone());
         user.setCollege(req.college());

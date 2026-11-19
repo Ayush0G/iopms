@@ -48,6 +48,9 @@ public class TaskService {
     }
 
     private void apply(Task task, TaskRequest req) {
+        if (req.deadline() != null && req.startDate() != null && req.deadline().isBefore(req.startDate())) {
+            throw new ApiException(400, "Deadline cannot be before the start date");
+        }
         User assignee = users.findById(req.assigneeId())
                 .orElseThrow(() -> new ApiException(404, "Assigned intern not found"));
         task.setTitle(req.title());

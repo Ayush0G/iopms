@@ -14,14 +14,14 @@
 > server-enforced rules, JWT role-based login and a Supabase PostgreSQL database."
 
 **Numbers to remember:**
-- **7 modules** (A–G) · **8 DB tables** · **14 passing tests** (5 unit + 9 end-to-end)
+- **7 modules** (A–G) · **8 DB tables** · **15 passing tests** (5 unit + 10 end-to-end)
 - **2 roles** (ADMIN, INTERN) · **2 browser panels**, one login page
 - **Java 21 / Spring Boot 3.4 / JWT / Supabase PostgreSQL 17 / plain HTML-CSS-JS**
 
 **Commands (say them out loud):**
 - `mvn spring-boot:run "-Dspring-boot.run.profiles=dev"` → local H2, zero setup
 - `.\run-supabase.ps1` → real Supabase database
-- `mvn test` → 14/14 green
+- `mvn test` → 15/15 green
 - App: `http://localhost:8080` · Swagger: `/swagger-ui.html`
 
 **Logins:** admin `admin@valenlabs.com / Admin@123` · intern `ayush@valenlabs.com / Intern@123`
@@ -344,15 +344,21 @@ Exceptions → GlobalExceptionHandler → 400 / 403 / 409 / 500 JSON error
 - `@Valid` + jakarta constraints on request bodies → bad input gets 400 before reaching services.
 - Error handling: validation → 400, authz → 403, conflicts (duplicate report, open session) → 409,
   unexpected → 500 with details in logs only.
+- **Bad input never becomes a 500:** `@Valid` on every body; `@PastOrPresent` on dates;
+  `WebUtils.month()` validates `?month=YYYY-MM`; `GlobalExceptionHandler` maps bad JSON dates,
+  wrong enum/query/path types and missing params to **400**, wrong HTTP method to **405**.
+  Cross-field date rules (deadline ≥ start, end ≥ join, check-out ≥ check-in) are checked in services.
+- Covered by `badInputReturns400Not500` in `AppFlowTest`: invalid date string, invalid month/date
+  query, invalid path ID/enum, missing param, future date, reversed dates, missing required fields.
 
 ---
 
 ## 8. Testing & quality must-knows
 
-- `mvn test` → **14 tests**:
+- `mvn test` → **15 tests**:
   - `AttendanceServiceTest` (5, Mockito) — pure business rules, no DB/network: one-open-session,
     end-without-start, hour computation, correction recompute + audit, invalid correction.
-  - `AppFlowTest` (9, full HTTP + in-memory H2) — login → create intern → 401/403 role isolation
+  - `AppFlowTest` (10, full HTTP + in-memory H2) — login → create intern → 401/403 role isolation
     → attendance rules → 480-min audited correction → task progress rules → one-report-per-day
     409 → review → versioned submissions → dashboard numbers → consolidated report + CSV.
 - Why both kinds? Unit tests pinpoint rule failures fast; e2e proves the wiring (filters, URLs,
@@ -434,6 +440,10 @@ Exceptions → GlobalExceptionHandler → 400 / 403 / 409 / 500 JSON error
   migrations, PDF export, real modal inputs instead of `prompt()`, automated CI.
 - **"This looks AI-assisted — what did you actually do?"** → See section 11 below. Be calm and
   specific; point at the bugs you found and the flows you verified.
+- **"What if someone sends an invalid date / bad input?"** → It gets a 400 with a clear message:
+  bean validation handles wrong formats/ranges/future dates, `WebUtils` handles `?month`, and
+  `GlobalExceptionHandler` converts JSON/type/param errors that used to be 500s. Cross-field
+  rules (deadline before start, etc.) are checked in the service. Test: `badInputReturns400Not500`.
 - **"I don't know that one."** → Say: "I haven't used that directly. Based on what I know,
   I'd approach it by… and I'd check the docs/source." Honesty + reasoning beats bluffing.
 
