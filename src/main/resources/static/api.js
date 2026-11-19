@@ -82,6 +82,18 @@ function tabs(loaders) {
 function today() { return new Date().toISOString().slice(0, 10); }
 function thisMonth() { return new Date().toISOString().slice(0, 7); }
 
+/* Display helpers: ISO yyyy-MM-dd stays on the wire / in forms, we only render dd/MM/yyyy. */
+function fmtDate(iso) {
+  if (!iso) return '';
+  const parts = iso.slice(0, 10).split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : iso;
+}
+function fmtDateTime(iso) {
+  if (!iso) return '';
+  const [date, time] = iso.split('T');
+  return fmtDate(date) + (time ? ' ' + time.slice(0, 5) : '');
+}
+
 /** Reads form fields by element id; these inputs carry no name attribute, so FormData is empty. */
 function getForm(id) {
   return Object.fromEntries(

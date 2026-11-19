@@ -6,7 +6,7 @@ async function loadInterns() {
   const rows = state.interns.map(i => `
     <tr>
       <td>${esc(i.name)}</td><td>${esc(i.email)}</td><td>${esc(i.college)}</td>
-      <td>${esc(i.joinedDate)}</td><td>${esc(i.endDate)}</td>
+      <td>${esc(fmtDate(i.joinedDate))}</td><td>${esc(fmtDate(i.endDate))}</td>
       <td>${badge(i.active ? 'ACTIVE' : 'INACTIVE')}</td>
       <td>
         <button class="small ghost" onclick='fillIntern(${JSON.stringify(JSON.stringify(i))})'>Edit</button>
@@ -108,7 +108,7 @@ async function loadAttendanceDate() {
   const list = await API.get('/admin/attendance?date=' + date);
   document.getElementById('att-list').innerHTML = list.length === 0 ? '<p class="muted">No sessions on this date.</p>' :
     `<table><tr><th>ID</th><th>Intern</th><th>Check-in</th><th>Check-out</th><th>Hours</th><th>Corrected</th><th></th></tr>` +
-    list.map(a => `<tr><td>${a.id}</td><td>${esc(a.internName)}</td><td>${esc(a.checkIn)}</td><td>${esc(a.checkOut)}</td>
+    list.map(a => `<tr><td>${a.id}</td><td>${esc(a.internName)}</td><td>${esc(fmtDateTime(a.checkIn))}</td><td>${esc(fmtDateTime(a.checkOut))}</td>
       <td>${minutes(a.minutes)}</td><td>${a.correction === 'CORRECTED' ? 'yes' : 'no'}</td>
       <td><button class="small ghost" onclick="prefillCorrection(${a.id})">Correct</button>
       <button class="small ghost" onclick="showAudit(${a.id})">Audit</button></td></tr>`).join('') + '</table>';
@@ -134,7 +134,7 @@ async function showAudit(id) {
   const rows = await API.get('/admin/attendance/' + id + '/audit');
   document.getElementById('audit-box').innerHTML = rows.length === 0 ? '<p class="muted">No corrections recorded for #' + id + '.</p>' :
     `<table><tr><th>At</th><th>Old in</th><th>Old out</th><th>New in</th><th>New out</th><th>Reason</th><th>By</th></tr>` +
-    rows.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.oldCheckIn)}</td><td>${esc(a.oldCheckOut)}</td><td>${esc(a.newCheckIn)}</td><td>${esc(a.newCheckOut)}</td><td>${esc(a.reason)}</td><td>${esc(a.admin.name)}</td></tr>`).join('') + '</table>';
+    rows.map(a => `<tr><td>${esc(fmtDateTime(a.at))}</td><td>${esc(fmtDateTime(a.oldCheckIn))}</td><td>${esc(fmtDateTime(a.oldCheckOut))}</td><td>${esc(fmtDateTime(a.newCheckIn))}</td><td>${esc(fmtDateTime(a.newCheckOut))}</td><td>${esc(a.reason)}</td><td>${esc(a.admin.name)}</td></tr>`).join('') + '</table>';
 }
 
 /* ---- Tasks ---- */
@@ -174,7 +174,7 @@ async function loadTaskList() {
   const list = await API.get('/admin/tasks?' + qs);
   document.getElementById('task-list').innerHTML = list.length === 0 ? '<p class="muted">No tasks.</p>' :
     `<table><tr><th>ID</th><th>Title</th><th>Assignee</th><th>Priority</th><th>Deadline</th><th>Status</th><th>Progress</th><th>Remarks</th><th></th></tr>` +
-    list.map(t => `<tr><td>${t.id}</td><td>${esc(t.title)}</td><td>${esc(t.assigneeName)}</td><td>${badge(t.priority)}</td><td>${esc(t.deadline)}</td><td>${badge(t.status)}</td><td>${t.progress}%</td><td>${esc(t.adminRemarks)}</td>
+    list.map(t => `<tr><td>${t.id}</td><td>${esc(t.title)}</td><td>${esc(t.assigneeName)}</td><td>${badge(t.priority)}</td><td>${esc(fmtDate(t.deadline))}</td><td>${badge(t.status)}</td><td>${t.progress}%</td><td>${esc(t.adminRemarks)}</td>
       <td><button class="small ghost" onclick='fillTask(${JSON.stringify(JSON.stringify(t))})'>Edit</button></td></tr>`).join('') + '</table>';
 }
 
@@ -225,11 +225,11 @@ async function loadReportList() {
   if (internId) qs.set('internId', internId); if (date) qs.set('date', date); if (status) qs.set('status', status);
   const list = await API.get('/admin/reports?' + qs);
   document.getElementById('report-list').innerHTML = list.length === 0 ? '<p class="muted">No reports.</p>' :
-    list.map(r => `<details><summary>${esc(r.date)} — ${esc(r.internName)} — ${badge(r.status)} — ${r.progress}%</summary>
+    list.map(r => `<details><summary>${esc(fmtDate(r.date))} — ${esc(r.internName)} — ${badge(r.status)} — ${r.progress}%</summary>
       <p><b>Tasks completed:</b> ${esc(r.tasksCompleted)}<br><b>Work performed:</b> ${esc(r.workPerformed)}<br>
       <b>Time spent:</b> ${esc(r.timeSpent)}<br><b>Challenges:</b> ${esc(r.challenges)}<br>
       <b>Pending:</b> ${esc(r.pendingWork)}<br><b>Next day plan:</b> ${esc(r.nextDayPlan)}<br>
-      <b>Links:</b> ${esc(r.links)}<br><b>Submitted:</b> ${esc(r.submittedAt)}<br><b>Remarks:</b> ${esc(r.adminRemarks)}</p>
+      <b>Links:</b> ${esc(r.links)}<br><b>Submitted:</b> ${esc(fmtDateTime(r.submittedAt))}<br><b>Remarks:</b> ${esc(r.adminRemarks)}</p>
       <div class="row"><button class="small" onclick="reviewReport(${r.id}, 'APPROVED')">Approve</button>
       <button class="small ghost" onclick="reviewReport(${r.id}, 'CHANGES_REQUESTED')">Request changes</button></div></details>`).join('');
 }
@@ -278,7 +278,7 @@ async function loadProjects() {
   const list = await API.get('/admin/projects');
   document.getElementById('project-list').innerHTML = list.length === 0 ? '<p class="muted">No projects.</p>' :
     `<table><tr><th>ID</th><th>Title</th><th>Supervisor</th><th>Dates</th><th>Status</th><th>Interns</th><th></th></tr>` +
-    list.map(p => `<tr><td>${p.id}</td><td>${esc(p.title)}</td><td>${esc(p.supervisor)}</td><td>${esc(p.startDate)} → ${esc(p.expectedEndDate)}</td><td>${badge(p.status)}</td><td>${esc(p.internNames.join(', '))}</td>
+    list.map(p => `<tr><td>${p.id}</td><td>${esc(p.title)}</td><td>${esc(p.supervisor)}</td><td>${esc(fmtDate(p.startDate))} → ${esc(fmtDate(p.expectedEndDate))}</td><td>${badge(p.status)}</td><td>${esc(p.internNames.join(', '))}</td>
       <td><button class="small ghost" onclick='fillProject(${JSON.stringify(JSON.stringify(p))})'>Edit</button></td></tr>`).join('') + '</table>';
   document.getElementById('sub-project').innerHTML = list.map(p => `<option value="${p.id}">${esc(p.title)}</option>`).join('');
 }
@@ -308,7 +308,7 @@ async function loadSubmissions() {
   const id = document.getElementById('sub-project').value;
   const list = await API.get('/admin/projects/' + id + '/submissions');
   document.getElementById('sub-list').innerHTML = list.length === 0 ? '<p class="muted">No submissions yet.</p>' :
-    list.map(s => `<details><summary>v${s.version} — ${esc(s.internName)} — ${badge(s.status)} — ${esc(s.submittedAt)}</summary>
+    list.map(s => `<details><summary>v${s.version} — ${esc(s.internName)} — ${badge(s.status)} — ${esc(fmtDateTime(s.submittedAt))}</summary>
       <p><b>Repo:</b> <a href="${esc(s.repoUrl)}" target="_blank">${esc(s.repoUrl)}</a><br><b>Notes:</b> ${esc(s.notes)}<br><b>Comments:</b> ${esc(s.adminComments)}</p>
       <div class="row"><button class="small" onclick="reviewSubmission(${s.id}, 'APPROVED')">Approve</button>
       <button class="small ghost" onclick="reviewSubmission(${s.id}, 'CHANGES_REQUESTED')">Request changes</button></div></details>`).join('');
@@ -336,11 +336,11 @@ async function showInternReport() {
   const t = (title, rows) => rows.length === 0 ? '' : `<div class="card"><h2>${title}</h2><table>${rows}</table></div>`;
   document.getElementById('ir-body').innerHTML = `
     <div class="card"><h2>${esc(r.profile.name)}</h2>
-      <p>${esc(r.profile.email)} · ${esc(r.profile.college || '')} · joined ${esc(r.profile.joinedDate)} · end ${esc(r.profile.endDate)}<br>
+      <p>${esc(r.profile.email)} · ${esc(r.profile.college || '')} · joined ${esc(fmtDate(r.profile.joinedDate))} · end ${esc(fmtDate(r.profile.endDate))}<br>
       <b>Total working hours this month: ${minutes(r.totalMinutes)}</b></p></div>
-    ${t('Attendance', r.attendance.map(a => `<tr><td>${esc(a.date)}</td><td>${esc(a.checkIn)}</td><td>${esc(a.checkOut)}</td><td>${minutes(a.minutes)}</td><td>${a.correction === 'CORRECTED' ? 'corrected' : ''}</td></tr>`).join(''))}
-    ${t('Tasks', r.tasks.map(x => `<tr><td>${esc(x.title)}</td><td>${badge(x.status)}</td><td>${x.progress}%</td><td>${esc(x.deadline)}</td><td>${esc(x.adminRemarks)}</td></tr>`).join(''))}
-    ${t('Daily reports', r.reports.map(x => `<tr><td>${esc(x.date)}</td><td>${badge(x.status)}</td><td>${x.progress}%</td><td>${esc(x.adminRemarks)}</td></tr>`).join(''))}
+    ${t('Attendance', r.attendance.map(a => `<tr><td>${esc(fmtDate(a.date))}</td><td>${esc(fmtDateTime(a.checkIn))}</td><td>${esc(fmtDateTime(a.checkOut))}</td><td>${minutes(a.minutes)}</td><td>${a.correction === 'CORRECTED' ? 'corrected' : ''}</td></tr>`).join(''))}
+    ${t('Tasks', r.tasks.map(x => `<tr><td>${esc(x.title)}</td><td>${badge(x.status)}</td><td>${x.progress}%</td><td>${esc(fmtDate(x.deadline))}</td><td>${esc(x.adminRemarks)}</td></tr>`).join(''))}
+    ${t('Daily reports', r.reports.map(x => `<tr><td>${esc(fmtDate(x.date))}</td><td>${badge(x.status)}</td><td>${x.progress}%</td><td>${esc(x.adminRemarks)}</td></tr>`).join(''))}
     ${t('Project submissions', r.submissions.map(s => `<tr><td>${esc(s.projectTitle)}</td><td>v${s.version}</td><td>${badge(s.status)}</td><td>${esc(s.adminComments)}</td></tr>`).join(''))}`;
 }
 

@@ -12,7 +12,7 @@ async function loadProfile() {
         <div><label>College</label><input id="pf-college" value="${esc(p.college)}"></div>
         <div style="align-self:end"><button>Save</button></div>
       </form>
-      <p class="muted">Email ${esc(p.email)} · joined ${esc(p.joinedDate)} · end ${esc(p.endDate)}</p>
+      <p class="muted">Email ${esc(p.email)} · joined ${esc(fmtDate(p.joinedDate))} · end ${esc(fmtDate(p.endDate))}</p>
       <p class="ok" id="pf-msg"></p></div>`;
   document.getElementById('profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -42,12 +42,12 @@ async function loadAttendance() {
         <button id="btn-end" class="ghost" ${open ? '' : 'disabled'} onclick="punch('end')">End Work</button>
         <span class="muted">Check-in/check-out is separate from portal login. Times come from the server clock.</span>
       </div>
-      ${open ? `<p class="ok">Working since ${esc(open.checkIn)} — session not yet ended.</p>` : ''}
+      ${open ? `<p class="ok">Working since ${esc(fmtDateTime(open.checkIn))} — session not yet ended.</p>` : ''}
       <p><b>Total this month: ${minutes(total)}</b></p>
       ${incomplete.length ? `<p class="error">Incomplete sessions from earlier days: ${incomplete.length} (never ended)</p>` : ''}
       <table><tr><th>Date</th><th>Check-in</th><th>Check-out</th><th>Hours</th><th>Corrected</th></tr>
       ${history.length === 0 ? '<tr><td colspan="5" class="muted">No records.</td></tr>' :
-        history.map(a => `<tr><td>${esc(a.date)}</td><td>${esc(a.checkIn)}</td><td>${esc(a.checkOut)}</td><td>${minutes(a.minutes)}</td><td>${a.correction === 'CORRECTED' ? 'yes' : ''}</td></tr>`).join('')}
+        history.map(a => `<tr><td>${esc(fmtDate(a.date))}</td><td>${esc(fmtDateTime(a.checkIn))}</td><td>${esc(fmtDateTime(a.checkOut))}</td><td>${minutes(a.minutes)}</td><td>${a.correction === 'CORRECTED' ? 'yes' : ''}</td></tr>`).join('')}
       </table></div>`;
 }
 
@@ -65,7 +65,7 @@ async function loadTasks() {
     list.map(t => `<div class="card">
       <h2>${esc(t.title)} ${badge(t.status)}</h2>
       <p>${esc(t.description)}<br>
-      <span class="muted">Priority ${badge(t.priority)} · start ${esc(t.startDate)} · deadline ${esc(t.deadline)} · progress ${t.progress}%</span></p>
+      <span class="muted">Priority ${badge(t.priority)} · start ${esc(fmtDate(t.startDate))} · deadline ${esc(fmtDate(t.deadline))} · progress ${t.progress}%</span></p>
       ${t.adminRemarks ? `<p class="muted">Admin remarks: ${esc(t.adminRemarks)}</p>` : ''}
       <div class="row">
         <input id="tp-${t.id}" type="number" min="0" max="100" value="${t.progress}" style="max-width:90px" title="Progress %">
@@ -106,7 +106,7 @@ async function loadReports() {
     </div>
     <div class="card"><h2>My reports &amp; admin feedback</h2>
       ${list.length === 0 ? '<p class="muted">No reports yet.</p>' : list.map(r => `<details>
-        <summary>${esc(r.date)} — ${badge(r.status)} — ${r.progress}%</summary>
+        <summary>${esc(fmtDate(r.date))} — ${badge(r.status)} — ${r.progress}%</summary>
         <p><b>Tasks completed:</b> ${esc(r.tasksCompleted)}<br><b>Work performed:</b> ${esc(r.workPerformed)}<br>
         <b>Time spent:</b> ${esc(r.timeSpent)}<br><b>Challenges:</b> ${esc(r.challenges)}<br>
         <b>Pending:</b> ${esc(r.pendingWork)}<br><b>Next day plan:</b> ${esc(r.nextDayPlan)}<br>
@@ -137,7 +137,7 @@ async function loadProjects() {
       ${projects.length === 0 ? '<p class="muted">No projects assigned yet.</p>' : projects.map(p => `
       <div style="border-top:1px solid #eee;padding:8px 0">
         <h3 style="margin:4px 0">${esc(p.title)} ${badge(p.status)}</h3>
-        <p>${esc(p.description)}<br><span class="muted">Supervisor ${esc(p.supervisor)} · ${esc(p.startDate)} → ${esc(p.expectedEndDate)}</span></p>
+        <p>${esc(p.description)}<br><span class="muted">Supervisor ${esc(p.supervisor)} · ${esc(fmtDate(p.startDate))} → ${esc(fmtDate(p.expectedEndDate))}</span></p>
         <div class="row">
           <input id="repo-${p.id}" placeholder="GitHub repository URL" style="max-width:320px">
           <input id="notes-${p.id}" placeholder="Progress notes" style="max-width:320px">
@@ -149,7 +149,7 @@ async function loadProjects() {
       ${submissions.length === 0 ? '<p class="muted">No submissions yet.</p>' : `
       <table><tr><th>Project</th><th>Version</th><th>Repo</th><th>Submitted</th><th>Status</th><th>Admin comments</th></tr>
       ${submissions.map(s => `<tr><td>${esc(s.projectTitle)}</td><td>v${s.version}</td>
-        <td><a href="${esc(s.repoUrl)}" target="_blank">repo</a></td><td>${esc(s.submittedAt)}</td>
+        <td><a href="${esc(s.repoUrl)}" target="_blank">repo</a></td><td>${esc(fmtDateTime(s.submittedAt))}</td>
         <td>${badge(s.status)}</td><td>${esc(s.adminComments) || '—'}</td></tr>`).join('')}
       </table>`}
     </div>`;
