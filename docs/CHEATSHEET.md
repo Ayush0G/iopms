@@ -94,6 +94,140 @@
 
 ---
 
+## 3.1 Decision log — what we picked, why, and what we rejected
+
+> Interviewer-friendly pattern: **"We chose X because Y; we didn't pick Z because…; the trade-off is…"**
+
+- **Spring Boot over plain servlets/Spring MVC**
+  - Why: auto-config + dependency injection + huge ecosystem → faster, less error-prone setup.
+  - Rejected: manual servlet/XML configuration (lots of boilerplate).
+  - Trade-off: some "magic" — you must understand what auto-configuration does.
+- **REST + JSON over server-rendered pages / SOAP**
+  - Why: matches our JS frontend exactly; each endpoint is small and testable independently.
+  - Trade-off: more HTTP calls, so we keep endpoints coarse (one call returns a whole report).
+- **JPA / Hibernate over hand-written JDBC SQL**
+  - Why: repository interfaces instead of SQL boilerplate; same code runs on H2 and Postgres.
+  - Rejected: raw JDBC (verbose, DB-specific).
+  - Trade-off: less control → we hit a lazy-loading 500 and had to learn about `@Transactional`.
+- **Stateless JWT over server sessions**
+  - Why: no session storage on the server; token carries identity + role; scales horizontally.
+  - Rejected: `HttpSession` (server memory, sticky sessions).
+  - Trade-off: can't instantly revoke a token — future improvement is refresh tokens/blacklist.
+- **BCrypt over MD5/SHA/plain text**
+  - Why: slow + salted → brute-force resistant; never store reversible passwords.
+  - Trade-off: hashing costs a little CPU at login (intentionally).
+- **Supabase PostgreSQL over a local database**
+  - Why: managed, real SQL constraints, dashboard to verify data; assessment wanted a cloud DB.
+  - Rejected: MongoDB (no SQL constraints like partial unique index for our invariants).
+- **H2 for dev/tests over always using Supabase**
+  - Why: zero-setup local runs, fast isolated tests, no credentials needed for `mvn test`.
+  - Trade-off: two DBs → must ensure JPQL works on both (it did).
+- **Plain HTML/CSS/JS over React/Angular**
+  - Why: no npm/build step; Spring Boot serves the files → same-origin, no CORS; focus on backend.
+  - Trade-off: manual DOM rendering; we fixed re-render bugs (month picker, intern list).
+- **Frontend served by the backend over a separate static host**
+  - Why: one process to run, no CORS configuration, simple deployment story.
+- **Business rules in services, not only in the UI**
+  - Why: a user can call the API directly with Postman; the UI can be bypassed. Every rule
+    (one open session, one report/day, ownership, who can complete a task) lives in the service.
+  - Trade-off: more service code, but it is unit-testable with Mockito.
+- **DB constraints in addition to service checks**
+  - Why: defence in depth — even a bug or concurrent request can't create two open sessions or
+    two reports on the same date.
+- **Append-only audit table over overwriting the row**
+  - Why: after a correction we must answer "what was it before, who changed it, why?".
+- **Month filter as a query parameter over client-side filtering**
+  - Why: less data over the wire; server stays authoritative for hour totals.
+- **Hand-written CSV exporter over a PDF library**
+  - Why: one small format covers the requirement, no extra dependency; PDF declared as out of scope.
+- **`ddl-auto=update` over Flyway migrations**
+  - Why: MVP speed — tables appear on first boot.
+  - Trade-off (admit it): not safe for evolving a real production schema; Flyway would be next.
+- **Transaction pooler over Supabase's direct host**
+  - Why: direct host is IPv6-only and unreachable here; pooler is IPv4 (port 6543).
+  - Trade-off: must use `postgres.<ref>` as username and `prepareThreshold=0` with JDBC.
+- **Lombok over manual getters/constructors**
+  - Why: less boilerplate; `@RequiredArgsConstructor` gives constructor injection for free.
+  - Trade-off: needs annotation-processor configuration on Java 21 (we fixed that early on).
+- **Environment variables over hardcoded credentials**
+  - Why: the repo is public — no passwords or secrets in code; `run-supabase.ps1` prompts.
+- **`@Valid` DTOs over trusting request bodies**
+  - Why: reject bad input at the edge with 400 before it reaches business logic.
+- **One `GlobalExceptionHandler` over try/catch in every method**
+  - Why: consistent error format and status codes; real details stay in server logs.
+- **Package-per-feature (`attendance/`, `task/`, …) over layer-only packages**
+  - Why: everything for one feature sits together — easy to find when interviewer asks "where is X?".
+- **Unit + e2e tests over manual clicking only**
+  - Why: unit tests catch rule regressions instantly; e2e proves filters/URLs/JSON/status codes work.
+  - Evidence: tests caught the missing `save()` and the lazy-loading 500 before delivery.
+
+---
+
+## 3.2 Dependency injection in this project — where to point in the code
+
+**The idea in one line:** a class doesn't create its own helpers with `new`; Spring creates them
+once and **hands them in through the constructor**. That's dependency injection (DI).
+
+**The pattern used everywhere here:**
+- Class is marked `@Service`, `@Component`, `@Configuration` or `@RestController` → Spring
+  registers it as a **bean**.
+- Dependencies are `private final` fields.
+- Lombok's `@RequiredArgsConstructor` generates the constructor that takes those fields —
+  Spring calls it automatically. There is **no `@Autowired` in our code** (constructor injection
+  via Lombok is cleaner).
+
+**Concrete injection points (open these files when asked):**
+
+| File | What is injected into it | Why |
+|------|--------------------------|-----|
+| `auth/AuthController.java` | `UserRepository`, `PasswordEncoder`, `JwtService` | login needs to find user, check hash, issue token |
+| `auth/SecurityConfig.java` | `JwtAuthFilter`; **defines** `@Bean PasswordEncoder` (BCrypt) and `@Bean SecurityFilterChain` |central place that wires security together |
+| `auth/JwtAuthFilter.java` | `JwtService`, `UserRepository` | validate token, then confirm the DB user is still active |
+| `attendance/AttendanceService.java` | `AttendanceRepository`, `AttendanceAuditRepository` | rules + saving sessions and audit rows |
+| `user/InternService.java` | `UserRepository`, `PasswordEncoder` | create interns with hashed passwords |
+| `project/ProjectService.java` | `ProjectRepository`, `ProjectSubmissionRepository`, `UserRepository` | projects + versions + assignees |
+| `admin/AdminController.java` | 7 services + `CurrentUser` | all admin screens behind one controller |
+| `intern/InternController.java` | `CurrentUser` + 4 services | self-scoped endpoints |
+| `admin/DashboardService.java` | repositories **and** Task/Report/Project services | composing other services is normal |
+| `common/CurrentUser.java` | `UserRepository` | resolve "who am I" from the token, once, for all controllers |
+| `user/SeedData.java` | `UserRepository`, `PasswordEncoder` | seed admin with a proper hash at startup |
+
+**Where the injected objects come from:**
+- `@Service` / `@Component` → our own classes (e.g. `JwtService`, `CurrentUser`).
+- Spring Data JPA → creates repository **implementations** from the interfaces at startup
+  (we only write the interface, e.g. `UserRepository extends JpaRepository<User, Long>`).
+- `@Bean` methods in `SecurityConfig` → third-party objects we choose to create, e.g.
+  `new BCryptPasswordEncoder()` is made once and injected into `AuthController`, `InternService`
+  and `SeedData`.
+- By default these beans are **singletons** — one shared instance per app, not one per request.
+
+**Why DI matters here (interviewer answer):**
+- Testability: `AttendanceServiceTest` uses Mockito `@Mock` repositories + `@InjectMocks` service
+  → business rules tested without a database.
+- Swappability: change H2 → Postgres via config; services don't care.
+- Single source of truth: one `PasswordEncoder`, one `CurrentUser` resolver — consistent behaviour.
+- No `new Service()` scattered around → loose coupling, easier to change one layer.
+
+**What is NOT injected** (don't overclaim): DTOs and entities are created with `new`,
+`LocalDateTime.now()` is called directly, and local variables/strings are ordinary code — DI is
+for shared collaborators only.
+
+**Common DI terms flashlist** (full explanations in section 12):
+- **Bean** — object created and managed by Spring.
+- **Container / context** — the thing that creates and holds the beans.
+- **Inversion of control (IoC)** — Spring, not your class, controls object creation.
+- **Constructor injection** — dependencies passed in via the constructor (our style).
+- **Autowiring** — Spring matching a constructor parameter to an available bean.
+- **`@Bean`** — method that declares "make this object a bean" (e.g. `PasswordEncoder`).
+- **`@Service` / `@Component` / `@Repository` / `@RestController`** — "make this class a bean" markers.
+- **Singleton** — one instance for the whole app.
+- **Interface vs implementation** — a contract vs the class doing the work; Spring injects the
+  implementation behind the interface (repositories).
+- **`@Mock` / `@InjectMocks`** — Mockito's fake dependency / the object under test in unit tests.
+- **Loose coupling** — classes know the *role* (interface) they need, not the concrete builder.
+
+---
+
 ## 4. How one request travels (explain this diagram from memory)
 
 ```
@@ -252,6 +386,18 @@ Exceptions → GlobalExceptionHandler → 400 / 403 / 409 / 500 JSON error
 - **"Explain the project in 30 seconds."** → Use the one-line pitch + "rules enforced server-side".
 - **"Why Spring Boot over plain Java servlets?"** → Auto-config, dependency injection, huge
   ecosystem, faster and less error-prone; production-standard in Java.
+- **"Where is dependency injection used in your code?"** → Everywhere Spring hands a collaborator
+  to a constructor: `AuthController` gets `UserRepository`/`PasswordEncoder`/`JwtService`,
+  `AttendanceService` gets two repositories, `AdminController` gets seven services; Lombok's
+  `@RequiredArgsConstructor` writes the constructor. `SecurityConfig` also *defines* beans with
+  `@Bean` (e.g. the BCrypt encoder). Details in section 3.2.
+- **"Why constructor injection and no `@Autowired`?"** → Required dependencies are explicit in
+  the constructor, the object is always fully built, and it's trivial to pass Mockito mocks in
+  unit tests. `@Autowired` field injection hides dependencies and needs reflection.
+- **"What is a bean / is it one per request?"** → A bean is an object managed by Spring; by
+  default it's a singleton shared across the app (e.g. one `PasswordEncoder`, one `CurrentUser`).
+- **"Describe one design decision and its trade-off."** → Use section 3.1, e.g. "JPA over JDBC:
+  fast and portable, but we had to learn lazy loading when a list request returned 500."
 - **"Why JPA/Hibernate instead of writing SQL?"** → Less boilerplate, portable across H2 and
   Postgres; SQL is still there when needed (JPQL/queries). Trade-off: less control, needs
   understanding of lazy loading — we hit that bug and fixed it.
@@ -404,8 +550,11 @@ Exceptions → GlobalExceptionHandler → 400 / 403 / 409 / 500 JSON error
 2. Trace the "Start Work" request from browser to DB without notes.
 3. Explain the 3 bugs you fixed, one sentence each.
 4. Explain the Supabase IPv6/pooler story.
-5. Open the repo and find: `AuthController.java`, `AttendanceService.java`, `AppFlowTest.java`,
-   `application.properties`, `schema-postgres.sql`, `presentation/index.html`.
-6. Open the app and click the demo path: admin login → Interns → logout → intern login →
+5. Point at DI in code: open `AuthController.java` (injected fields), `SecurityConfig.java`
+   (`@Bean`), and `AttendanceServiceTest.java` (`@Mock` / `@InjectMocks`).
+6. Name 3 decisions + their trade-offs from section 3.1 (JPA, JWT, plain JS are easy ones).
+7. Open the repo and find: `AppFlowTest.java`, `application.properties`,
+   `schema-postgres.sql`, `presentation/index.html`.
+8. Open the app and click the demo path: admin login → Interns → logout → intern login →
    Attendance → Tasks → Daily Report → Projects.
-7. Read the "AI-made" answer in section 11 once — then say it in your own words.
+9. Read the "AI-made" answer in section 11 once — then say it in your own words.
